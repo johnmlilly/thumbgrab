@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YT Thumbnail Extractor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #1a1a1a;
+            --border: #2a2a2a;
+            --accent: #ff2b2b;
+            --accent2: #ff6b35;
+            --text: #f0f0f0;
+            --muted: #666;
+            --success: #00e676;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Grain overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0.4;
+        }
+
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 24px 48px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-mark {
+            width: 36px;
+            height: 36px;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            clip-path: polygon(0 0, 100% 0, 100% 75%, 75% 100%, 0 100%);
+        }
+
+        .logo-mark svg {
+            width: 18px;
+            height: 18px;
+            fill: white;
+        }
+
+        .logo-text {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 22px;
+            letter-spacing: 3px;
+            color: var(--text);
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .badge {
+            margin-left: auto;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            letter-spacing: 2px;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 64px 24px 96px;
+        }
+
+        .hero {
+            margin-bottom: 56px;
+        }
+
+        .hero h1 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(48px, 8vw, 96px);
+            line-height: 0.92;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .hero h1 em {
+            font-style: normal;
+            color: transparent;
+            -webkit-text-stroke: 1px var(--accent);
+        }
+
+        .hero p {
+            color: var(--muted);
+            font-size: 15px;
+            font-weight: 300;
+            max-width: 420px;
+            line-height: 1.6;
+        }
+
+        /* Input zone */
+        .input-zone {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 4px;
+            display: flex;
+            gap: 0;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .input-zone::before {
+            content: 'PASTE URL';
+            position: absolute;
+            top: -10px;
+            left: 16px;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 2px;
+            background: var(--bg);
+            padding: 0 8px;
+        }
+
+        .url-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            padding: 16px 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .url-input::placeholder {
+            color: var(--muted);
+        }
+
+        .extract-btn {
+            background: var(--accent);
+            border: none;
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 3px;
+            padding: 14px 32px;
+            cursor: pointer;
+            transition: background 0.15s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .extract-btn:hover {
+            background: #e02222;
+        }
+
+        .extract-btn:active {
+            transform: scale(0.98);
+        }
+
+        .hint {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--muted);
+            padding-left: 4px;
+        }
+
+        /* Error */
+        .error-msg {
+            display: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            padding: 12px 16px;
+            border-left: 2px solid var(--accent);
+            margin-top: 16px;
+            background: rgba(255, 43, 43, 0.05);
+        }
+
+        /* Results section */
+        .results {
+            margin-top: 56px;
+            display: none;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .results-header h2 {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+
+        .video-id-tag {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: var(--accent);
+            background: rgba(255, 43, 43, 0.1);
+            padding: 4px 10px;
+            border: 1px solid rgba(255, 43, 43, 0.3);
+        }
+
+        .thumbnails-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 2px;
+        }
+
+        .thumb-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .thumb-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .thumb-card:hover .thumb-overlay {
+            opacity: 1;
+        }
+
+        .thumb-img-wrap {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .thumb-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.3s;
+        }
+
+        .thumb-card:hover .thumb-img-wrap img {
+            transform: scale(1.02);
+        }
+
+        .unavailable-state {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            background: var(--surface2);
+        }
+
+        .unavailable-state svg {
+            opacity: 0.3;
+        }
+
+        .thumb-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 43, 43, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .thumb-overlay span {
+            color: white;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+        }
+
+        .thumb-info {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .thumb-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 1.5px;
+            color: var(--text);
+        }
+
+        .thumb-dims {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .thumb-actions {
+            padding: 0 16px 14px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 1.5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .action-btn.copied {
+            background: var(--success);
+            border-color: var(--success);
+            color: #000;
+        }
+
+        .action-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* URL bar at bottom of card */
+        .thumb-url {
+            margin: 0 16px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            color: var(--muted);
+            word-break: break-all;
+            line-height: 1.5;
+            user-select: all;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            background: var(--success);
+            color: #000;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            padding: 12px 20px;
+            transform: translateY(80px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Divider line accent */
+        .line-accent {
+            width: 48px;
+            height: 3px;
+            background: var(--accent);
+            margin-bottom: 24px;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .thumb-card {
+            animation: fadeUp 0.4s ease both;
+        }
+
+        .thumb-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .thumb-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .thumb-card:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .thumb-card:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .thumb-card:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .thumb-card:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-mark">
+            <svg viewBox="0 0 24 24">
+                <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+            </svg>
+        </div>
+        <div class="logo-text">THUMB<span>GRAB</span></div>
+        <div class="badge">YT THUMBNAIL EXTRACTOR</div>
+    </header>
+
+    <main>
+        <div class="hero">
+            <h1>EXTRACT<br><em>THUMBNAILS</em><br>INSTANTLY</h1>
+            <p>Paste any YouTube URL and grab all available thumbnail resolutions — ready to copy and reuse anywhere.
+            </p>
+        </div>
+
+        <div class="line-accent"></div>
+
+        <div class="input-zone">
+            <input class="url-input" id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                autocomplete="off" spellcheck="false" />
+            <button class="extract-btn" onclick="extract()">EXTRACT</button>
+        </div>
+        <div class="hint">Supports youtube.com, youtu.be, shorts &amp; embed links</div>
+        <div class="error-msg" id="errorMsg">⚠ Could not parse a valid YouTube video ID from that URL.</div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2>THUMBNAILS</h2>
+                <div class="video-id-tag" id="videoIdTag"></div>
+            </div>
+            <div class="thumbnails-grid" id="grid"></div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast">URL COPIED</div>
+
+    <script>
+        const SIZES = [
+            { key: 'maxresdefault', label: 'Max Resolution', dims: '1280 × 720' },
+            { key: 'sddefault', label: 'Standard', dims: '640 × 480' },
+            { key: 'hqdefault', label: 'High Quality', dims: '480 × 360' },
+            { key: 'mqdefault', label: 'Medium Quality', dims: '320 × 180' },
+            { key: 'default', label: 'Default', dims: '120 × 90' },
+            { key: '0', label: 'Frame 0', dims: '480 × 360' },
+        ];
+
+        function extractVideoId(url) {
+            url = url.trim();
+            const patterns = [
+                /(?:youtube\.com\/watch\?(?:.*&)?v=)([a-zA-Z0-9_-]{11})/,
+                /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+                /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+                /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+                /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+                /^([a-zA-Z0-9_-]{11})$/,
+            ];
+            for (const p of patterns) {
+                const m = url.match(p);
+                if (m) return m[1];
+            }
+            return null;
+        }
+
+        function thumbUrl(videoId, key) {
+            return `https://img.youtube.com/vi/${videoId}/${key}.jpg`;
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2200);
+        }
+
+        function fallbackCopy(text, onSuccess) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            try {
+                document.execCommand('copy');
+                onSuccess();
+            } catch (e) {
+                showToast('SELECT THE URL BELOW TO COPY');
+            }
+            document.body.removeChild(ta);
+        }
+
+        function copyUrl(url, btn) {
+            const orig = btn.innerHTML;
+            const markCopied = () => {
+                btn.classList.add('copied');
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> COPIED`;
+                showToast('URL COPIED TO CLIPBOARD');
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = orig;
+                }, 2000);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(markCopied).catch(() => fallbackCopy(url, markCopied));
+            } else {
+                fallbackCopy(url, markCopied);
+            }
+        }
+
+        function openUrl(url) {
+            window.open(url, '_blank');
+        }
+
+        function createCard(videoId, size) {
+            const url = thumbUrl(videoId, size.key);
+
+            const card = document.createElement('div');
+            card.className = 'thumb-card';
+
+            const imgWrap = document.createElement('div');
+            imgWrap.className = 'thumb-img-wrap';
+
+            const img = document.createElement('img');
+            img.alt = size.label;
+
+            const unavail = document.createElement('div');
+            unavail.className = 'unavailable-state';
+            unavail.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="var(--muted)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg><span>NOT AVAILABLE</span>`;
+            unavail.style.display = 'none';
+
+            // Declare overlay before setting img.src so onload/onerror can reference it
+            const overlay = document.createElement('div');
+            overlay.className = 'thumb-overlay';
+            overlay.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span>OPEN</span>`;
+            overlay.addEventListener('click', () => openUrl(url));
+
+            img.onload = function () {
+                // YouTube returns a 120x90 placeholder for unavailable thumbs at higher resolutions
+                if (img.naturalWidth === 120 && img.naturalHeight === 90 && size.key !== 'default' && size.key !== 'mqdefault' && size.key !== '0') {
+                    img.style.display = 'none';
+                    unavail.style.display = 'flex';
+                    overlay.style.display = 'none';
+                }
+            };
+            img.onerror = function () {
+                img.style.display = 'none';
+                unavail.style.display = 'flex';
+                overlay.style.display = 'none';
+            };
+            img.src = url;
+
+            imgWrap.appendChild(img);
+            imgWrap.appendChild(unavail);
+            imgWrap.appendChild(overlay);
+
+            const info = document.createElement('div');
+            info.className = 'thumb-info';
+            info.innerHTML = `<div class="thumb-label">${size.label}</div><div class="thumb-dims">${size.dims}</div>`;
+
+            const urlBar = document.createElement('div');
+            urlBar.className = 'thumb-url';
+            urlBar.textContent = url;
+
+            const actions = document.createElement('div');
+            actions.className = 'thumb-actions';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'action-btn';
+            copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPY URL`;
+            copyBtn.addEventListener('click', () => copyUrl(url, copyBtn));
+
+            const openBtn = document.createElement('button');
+            openBtn.className = 'action-btn';
+            openBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> OPEN`;
+            openBtn.addEventListener('click', () => openUrl(url));
+
+            actions.appendChild(copyBtn);
+            actions.appendChild(openBtn);
+
+            card.appendChild(imgWrap);
+            card.appendChild(info);
+            card.appendChild(urlBar);
+            card.appendChild(actions);
+
+            return card;
+        }
+
+        function extract() {
+            const input = document.getElementById('urlInput').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const results = document.getElementById('results');
+            const grid = document.getElementById('grid');
+            const videoIdTag = document.getElementById('videoIdTag');
+
+            errorMsg.style.display = 'none';
+
+            const videoId = extractVideoId(input);
+            if (!videoId) {
+                errorMsg.style.display = 'block';
+                results.classList.remove('visible');
+                return;
+            }
+
+            videoIdTag.textContent = videoId;
+            grid.innerHTML = '';
+
+            SIZES.forEach(size => {
+                grid.appendChild(createCard(videoId, size));
+            });
+
+            results.classList.add('visible');
+            results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Enter key support
+        document.getElementById('urlInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') extract();
+        });
+    </script>
+</body>
+
+</html>
