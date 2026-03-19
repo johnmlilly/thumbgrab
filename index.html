@@ -241,7 +241,7 @@
         .thumbnails-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 2px;
+            gap: 0.75rem;
         }
 
         .thumb-card {
@@ -488,8 +488,8 @@
         <div class="line-accent"></div>
 
         <div class="input-zone">
-            <input class="url-input" id="urlInput" type="text" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-                autocomplete="off" spellcheck="false" />
+            <input class="url-input" id="urlInput" type="url" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+                 />
             <button class="extract-btn" onclick="extract()">EXTRACT</button>
         </div>
         <div class="hint">Supports youtube.com, youtu.be, shorts &amp; embed links</div>
@@ -641,13 +641,9 @@
             copyBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> COPY URL`;
             copyBtn.addEventListener('click', () => copyUrl(url, copyBtn));
 
-            const openBtn = document.createElement('button');
-            openBtn.className = 'action-btn';
-            openBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> OPEN`;
-            openBtn.addEventListener('click', () => openUrl(url));
+          
 
             actions.appendChild(copyBtn);
-            actions.appendChild(openBtn);
 
             card.appendChild(imgWrap);
             card.appendChild(info);

@@ -1,0 +1,27 @@
+{
+  "name": "thumbgrab",
+  "version": "1.0.0",
+  "description": "A service to extract YouTube thumbnails.",
+  "keywords": [
+    "YouTube"
+  ],
+  "homepage": "https://github.com/johnlilly/thumbgrab#readme",
+  "bugs": {
+    "url": "https://github.com/johnlilly/thumbgrab/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnlilly/thumbgrab.git"
+  },
+  "license": "ISC",
+  "author": "John Lilly",
+  "type": "module",
+  "main": "index.js",
+ "scripts": {
+  "start": "eleventy --serve",
+  "build": "eleventy"
+},
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.5"
+  }
+}
